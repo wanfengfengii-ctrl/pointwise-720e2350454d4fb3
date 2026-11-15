@@ -1,0 +1,35 @@
+{
+  "schema": "pointwise-runtime/1",
+  "name": "fanout-hub",
+  "description": "Single-read fan-out of one non-replayable async byte stream to multiple subscribers, with bounded in-memory cache and tempdir spill. Python standard library only.",
+  "runtime": {
+    "language": "python",
+    "version": ">=3.8",
+    "dependencies": []
+  },
+  "package": {
+    "root": "fanout",
+    "modules": {
+      "fanout": "Hub dispatcher and claim-once Stream async iterators",
+      "fanout.testing": "ControlledSource controllable async byte source and chunk helpers",
+      "fanout.selftest": "verification suite including disk-vs-source byte comparison",
+      "fanout.demo": "fast/slow dual-stream demonstration"
+    }
+  },
+  "registered": [
+    {
+      "name": "verify",
+      "kind": "verification",
+      "cmd": ["python3", "-m", "fanout.selftest"],
+      "cwd": ".",
+      "description": "Runs the 13-case verification suite: chunk fidelity with preserved boundaries and empty chunks; single shared source read; on-demand fast/slow progress; disk-spill byte-for-byte comparison against the source payload; memory watermark bound (memory_bytes + one current source chunk); entitlement release on stream close; source closed and awaited on last close; source error propagated with original type and message after each stream's entitled prefix; cancelling a pending next closes the stream; concurrent next on one stream rejected; closed stream ends immediately; ValueError contract for index/claim/argument violations; repeatable resource release; tempdir hygiene with pre-existing files untouched."
+    },
+    {
+      "name": "demo:fast-slow",
+      "kind": "demo",
+      "cmd": ["python3", "-m", "fanout.demo"],
+      "cwd": ".",
+      "description": "Fast/slow dual-stream demo: one fast and one slow subscriber share a single read of a paced source (10 x 48B chunks, 128B memory budget). The fast stream finishes at ~0.6s while the slow one paces at 0.25s/chunk; retained chunks spill to the tempdir (peak 5 files, cache pinned at 96B) and are reclaimed as the slow stream catches up. Verifies identical output on both streams, a single source read, and full temp-file cleanup with the pre-existing file kept."
+    }
+  ]
+}
